@@ -1,8 +1,8 @@
-#Wynajem Mieszkan
+Wynajem Mieszkan
 Aplikacja do zarządzania wynajmem mieszkań napisana w języku Python. Umożliwia dodawanie, edytowanie, przeglądanie i filtrowanie pokoi (mieszkań) na podstawie czynszu. 
 Projekt wykorzystuje programowanie obiektowe i funkcyjne, obsługę plików JSON oraz testy jednostkowe.
 
-#Opis projektu
+Opis projektu
 Wynajem Mieszkan to system zarządzania wynajmem mieszkań, który pozwala użytkownikowi na:
 
 Dodawanie nowych pokoi (zwykłych lub premium) z numerem, czynszem, lokalizacją i najemcą.
