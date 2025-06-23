@@ -1,0 +1,33 @@
+{
+    "pokoje": [
+        {
+            "numer": 102,
+            "czynsz": 1200.0,
+            "najemca": null,
+            "lokalizacja": {
+                "miasto": "Kielce",
+                "ulica": "Domaszowska",
+                "numer_domu": "17B"
+            }
+        },
+        {
+            "numer": 101,
+            "czynsz": 1500.0,
+            "najemca": {
+                "imie": "Mykyta",
+                "nazwisko": "Lytvyn",
+                "email": "nikita@gmail.com"
+            },
+            "lokalizacja": {
+                "miasto": "Kielce",
+                "ulica": "Domaszowska",
+                "numer_domu": "17B"
+            },
+            "udogodnienia": [
+                "TV",
+                " WIFI",
+                " sauna"
+            ]
+        }
+    ]
+}

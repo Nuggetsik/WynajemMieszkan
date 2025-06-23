@@ -2,22 +2,17 @@
 from functools import reduce
 import time
 
-
 def log_execution_time(func):
     """Dekoder do rejestrowania czasu wykonania metody."""
-
     def wrapper(*args, **kwargs):
         start_time = time.time()
         result = func(*args, **kwargs)
         print(f"Metoda {func.__name__} została wykonana w {time.time() - start_time:.2f} sek.")
         return result
-
     return wrapper
-
 
 class Najemca:
     """Klasa reprezentująca najemca."""
-
     def __init__(self, imie, nazwisko, email):
         self.imie = imie
         self.nazwisko = nazwisko
@@ -31,16 +26,14 @@ class Najemca:
             "email": self.email
         }
 
-
 class Pokoj:
     """Podstawowa klasa dla pokoju."""
-
-    def __init__(self, numer, czynsz, najemca=None, lokalizacja=(0, 0)):
-        assert czynsz > 0, "Czynsz musi być dodatni!" # Dodaj czek
+    def __init__(self, numer, czynsz, najemca=None, lokalizacja=None):
+        assert czynsz > 0, "Czynsz musi być dodatni!"
         self.numer = numer
         self.czynsz = czynsz
         self.najemca = najemca
-        self.lokalizacja = lokalizacja  # Krotka dla współrzędnych
+        self.lokalizacja = lokalizacja or {"miasto": "", "ulica": "", "numer_domu": ""}  # Słownik dla lokalizacji
 
     def to_dict(self):
         """Konwersja obiektu pokoju do słownika."""
@@ -51,11 +44,9 @@ class Pokoj:
             "lokalizacja": self.lokalizacja
         }
 
-
 class PremiumPokoj(Pokoj):
     """Ocena za pokoje premium z dodatkowymi udogodnieniami."""
-
-    def __init__(self, numer, czynsz, najemca=None, lokalizacja=(0, 0), udogodnienia=None):
+    def __init__(self, numer, czynsz, najemca=None, lokalizacja=None, udogodnienia=None):
         super().__init__(numer, czynsz, najemca, lokalizacja)
         self.udogodnienia = udogodnienia or []
 
@@ -65,10 +56,8 @@ class PremiumPokoj(Pokoj):
         data["udogodnienia"] = self.udogodnienia
         return data
 
-
 class App:
     """Główna klasa aplikacji do zarządzania wynajmem."""
-
     def __init__(self, filename):
         from utils import load_data
         self.data = load_data(filename)
@@ -82,7 +71,7 @@ class App:
         for p in pokoje_data:
             najemca_data = p.get("najemca")
             najemca = Najemca(**najemca_data) if najemca_data else None
-            lokalizacja = tuple(p.get("lokalizacja", (0, 0)))  # Кортеж
+            lokalizacja = p.get("lokalizacja", {"miasto": "", "ulica": "", "numer_domu": ""})  # Słownik
             if p.get("udogodnienia"):
                 pokoje.append(PremiumPokoj(p["numer"], p["czynsz"], najemca, lokalizacja, p["udogodnienia"]))
             else:
@@ -130,13 +119,19 @@ class App:
         """Dodanie nowego pomieszczenia."""
         try:
             numer = int(input("Numer pokoju: "))
-            assert numer not in self.numbers_set, "Pokój o tym numerze już istnieje!"
             czynsz = float(input("Czynsz (zł): "))
             assert czynsz > 0, "Czynsz musi być dodatni!"
-            lokalizacja_x = float(input("Koordynata X: "))
-            lokalizacja_y = float(input("Koordynata Y: "))
-            is_premium = input("Czy pokój jest premium? (t/n): ").lower() == "t"
+            miasto = input("Miasto: ")
+            ulica = input("Ulica: ")
+            numer_domu = input("Numer domu: ")
+            lokalizacja = {"miasto": miasto, "ulica": ulica, "numer_domu": numer_domu}
 
+            # Sprawdzanie, czy pokój z takim numerem i lokalizacją już istnieje
+            for pokoj in self.pokoje:
+                if pokoj.numer == numer and pokoj.lokalizacja == lokalizacja:
+                    raise AssertionError("Pokój o tym numerze i lokalizacji już istnieje!")
+
+            is_premium = input("Czy pokój jest premium? (t/n): ").lower() == "t"
             najemca = None
             if input("Czy pokój ma najemcę? (t/n): ").lower() == "t":
                 imie = input("Imię najemcy: ")
@@ -146,9 +141,9 @@ class App:
 
             if is_premium:
                 udogodnienia = input("Udogodnienia (oddzielone przecinkami): ").split(",")
-                nowy_pokoj = PremiumPokoj(numer, czynsz, najemca, (lokalizacja_x, lokalizacja_y), udogodnienia)
+                nowy_pokoj = PremiumPokoj(numer, czynsz, najemca, lokalizacja, udogodnienia)
             else:
-                nowy_pokoj = Pokoj(numer, czynsz, najemca, (lokalizacja_x, lokalizacja_y))
+                nowy_pokoj = Pokoj(numer, czynsz, najemca, lokalizacja)
 
             self.pokoje.append(nowy_pokoj)
             self.numbers_set.add(numer)
@@ -160,9 +155,16 @@ class App:
         """Edytowanie istniejącego pokoju."""
         try:
             numer = int(input("Numer pokoju do edycji: "))
-            assert numer in self.numbers_set, "Pokój o tym numerze nie istnieje!"
+            miasto = input("Miasto pokoju: ")
+            ulica = input("Ulica pokoju: ")
+            numer_domu = input("Numer domu pokoju: ")
+            lokalizacja = {"miasto": miasto, "ulica": ulica, "numer_domu": numer_domu}
+
+            # Szukamy pokoju z podanym numerem i lokalizacją
+            found = False
             for pokoj in self.pokoje:
-                if pokoj.numer == numer:
+                if pokoj.numer == numer and pokoj.lokalizacja == lokalizacja:
+                    found = True
                     czynsz = input(f"Nowy czynsz (obecny: {pokoj.czynsz} zł, Enter aby pominąć): ")
                     if czynsz:
                         pokoj.czynsz = float(czynsz)
@@ -177,15 +179,19 @@ class App:
                             pokoj.udogodnienia = udogodnienia.split(",")
                     print("Pokój zaktualizowany.")
                     break
+            if not found:
+                raise AssertionError("Pokój o tym numerze i lokalizacji nie istnieje!")
         except (ValueError, AssertionError) as e:
             print(f"Błąd: {e}")
+
 
     def show_pokoje(self):
         """Wyświetlanie wszystkich pomieszczeń."""
         if not self.pokoje:
             print("Brak pokoi w systemie.")
         for pokoj in self.pokoje:
-            print(f"Pokój {pokoj.numer}, Czynsz: {pokoj.czynsz} zł, Lokalizacja: {pokoj.lokalizacja}")
+            lokalizacja_str = f"{pokoj.lokalizacja['miasto']}, {pokoj.lokalizacja['ulica']} {pokoj.lokalizacja['numer_domu']}"
+            print(f"Pokój {pokoj.numer}, Czynsz: {pokoj.czynsz} zł, Lokalizacja: {lokalizacja_str}")
             if isinstance(pokoj, PremiumPokoj):
                 print(f"  Udogodnienia: {', '.join(pokoj.udogodnienia)}")
             if pokoj.najemca:
@@ -195,7 +201,6 @@ class App:
         """Filtrowanie pokoi według czynszu przy użyciu lambda i filtra."""
         try:
             limit = float(input("Podaj maksymalny czynsz: "))
-            # Korzystanie z filtrów i lambda
             znalezione = list(filter(lambda p: p.czynsz <= limit, self.pokoje))
             if not znalezione:
                 print("Brak pokoi w podanym limicie.")
@@ -219,7 +224,7 @@ class App:
     def save(self, filename="data.json"):
         """Zapisywanie danych w formacie JSON."""
         from utils import save_data
-        pokoje_dict = list(map(lambda p: p.to_dict(), self.pokoje))  # Korzystanie z mapy
+        pokoje_dict = list(map(lambda p: p.to_dict(), self.pokoje))
         self.data["pokoje"] = pokoje_dict
         save_data(self.data, filename)
         print("Dane zapisane.")
